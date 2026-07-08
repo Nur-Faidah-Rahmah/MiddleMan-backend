@@ -27,11 +27,12 @@ Route::prefix('v1')->group(function () {
         Route::middleware('role:worker')->group(function () {
             Route::get('/available-jobs', [JobController::class, 'availableJobs']); // Bursa kerja
             Route::put('/jobs/{job}/take', [JobController::class, 'takeJob']);      // Ambil tugas
+            Route::put('/jobs/{job}/complete', [JobController::class, 'completeJob']); // Selesaikan tugas
         });
 
         // 3. RUTE KHUSUS ADMIN (Lolos Satpam 2: Role Admin)
         Route::middleware('role:admin')->group(function () {
-            Route::get('/admin/jobs/pending', [JobController::class, 'pendingJobs']); // Verifikasi list
+            Route::get('/jobs/pending', [JobController::class, 'pendingJobs']); // Verifikasi list
             Route::put('/jobs/{job}/verify', [JobController::class, 'verifyJob']);    // Setujui tugas
         });
 

@@ -9,7 +9,7 @@ class Category extends Model
 {
     protected $fillable = ['name', 'description'];
 
-    // Satu kategori bisa memiliki banyak tugas
+    // Menghubungkan Kategori dengan banyak Jobs (1 kategori bisa memiliki banyak tugas)
     public function jobs(): HasMany
     {
         return $this->hasMany(Job::class);

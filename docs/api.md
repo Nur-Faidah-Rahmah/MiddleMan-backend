@@ -15,9 +15,24 @@
 - **Body Request (JSON):**
   ```json
   {
-      "name": "Budi Pekerja",
-      "email": "budi@worker.com",
-      "password": "password123",
-      "password_confirmation": "password123",
-      "role_id": 3
+      "name": "Faidah",
+      "email": "faidah@gmail.com",
+      "password": "hdehpwlagi",
+      "password_confirmation": "hdehpwlagi",
+      "role_id": 1
+  }
+
+## 3. Job Management
+
+### A. Customer: Membuat Tugas Baru
+- **Endpoint:** `POST /jobs`
+- **Akses:** Privat (Khusus Customer)
+- **Body Request (JSON):**
+  ```json
+  {
+      "category_id": 1,
+      "title": "Bersih-bersih Garasi",
+      "description": "Sapu dan pel garasi rumah sampai bersih.",
+      "price": 50000,
+      "deadline": "2026-07-20"
   }

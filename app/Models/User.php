@@ -40,13 +40,13 @@ class User extends Authenticatable
     }
 
     // Tugas yang DIBUAT oleh user (sebagai Customer)
-    public function customerJobs(): HasMany
+    public function createdJobs()
     {
         return $this->hasMany(Job::class, 'customer_id');
     }
 
     // Tugas yang DIAMBIL oleh user (sebagai Worker)
-    public function workerJobs(): HasMany
+    public function takenJobs()
     {
         return $this->hasMany(Job::class, 'worker_id');
     }
