@@ -1,0 +1,10 @@
+❗ JANLUP SLLU PNDH BRANCH ❗
+
+#1
+git checkout main
+git pull origin main
+
+#2
+git checkout -b [branch-name]
+
+(Catatan Role ID: 1 = Admin, 2 = Customer, 3 = Worker)

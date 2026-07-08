@@ -12,7 +12,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+
+        // TAMBAHKAN BARIS INI UNTUK MENDAFTARKAN ALIAS 'role'
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+        ]);
+
+        // Daftarkan ke global middleware
+        $middleware->append(\App\Http\Middleware\SanitizeInput::class);
+        
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+        ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
