@@ -25,7 +25,7 @@ return new class extends Migration
             $table->decimal('price', 12, 2); // Menggunakan decimal untuk nominal uang (lebih aman)
             
             // Menggunakan ENUM untuk membatasi status yang valid
-            $table->enum('status', ['pending_verification', 'open', 'on_progress', 'completed'])
+            $table->enum('status', ['pending_verification', 'approved', 'on_progress', 'completed'])
                   ->default('pending_verification');
                   
             $table->dateTime('deadline');

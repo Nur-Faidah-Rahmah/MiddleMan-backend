@@ -7,23 +7,21 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreJobRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return false;
+        // Pastikan hanya Customer (role_id = 2) yang bisa membuat Job
+        return auth()->check() && auth()->user()->role_id === 2;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            //
+            'category_id' => 'required|exists:categories,id',
+            'title'       => 'required|string|max:255',
+            'description' => 'required|string',
+            'price'       => 'required|numeric|min:0',
+            // Pastikan deadline tidak boleh di masa lalu (minimal hari ini/besok)
+            'deadline'    => 'required|date|after:today', 
         ];
     }
 }
