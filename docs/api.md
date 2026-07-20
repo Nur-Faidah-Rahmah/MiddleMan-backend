@@ -34,12 +34,24 @@
 - **Response Sukses (200):**
   ```json
   {
-    "success": true,
-    "message": "Login berhasil.",
-    "data": {
-        "token": "1|laravel_sanctum_token_string...",
-        "user": { "name": "admin", "email": "admin@gmail.com", "role_id": 1 }
-    }
+      "message": "Login berhasil",
+      "access_token": "1|laravel_sanctum_token_string...",
+      "token_type": "Bearer",
+      "user": {
+          "id": 4,
+          "role_id": 1,
+          "name": "admin",
+          "email": "admin@gmail.com",
+          "email_verified_at": null,
+          "created_at": "YY-MM-19T14:47:44.000000Z",
+          "updated_at": "YY-MM-19T14:47:44.000000Z",
+          "role": {
+              "id": 1,
+              "name": "admin",
+              "created_at": "YY-MM-08T19:21:24.000000Z",
+              "updated_at": "YY-MM-08T19:21:24.000000Z"
+          }
+      }
   }
 
 ### C. Logout User
