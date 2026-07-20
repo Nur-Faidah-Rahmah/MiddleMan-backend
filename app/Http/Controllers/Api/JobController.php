@@ -3,39 +3,35 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Http\Requests\Job\StoreJobRequest;
-use Illuminate\Http\JsonResponse;
 use App\Models\Job;
-
+use App\Http\Requests\Job\StoreJobRequest;
+use App\Services\JobService;
+use Illuminate\Http\JsonResponse;
+use Exception;
 
 class JobController extends Controller
 {
+    protected $jobService;
+
+    // Inject JobService lewat constructor
+    public function __construct(JobService $jobService)
+    {
+        $this->jobService = $jobService;
+    }
+
     // ==========================================
     // 1. FUNGSI KHUSUS CUSTOMER
     // ==========================================
 
     public function store(StoreJobRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        
-        // Inject ID customer yang sedang login & set status awal ke 'pending'
-        $data['customer_id'] = auth()->id();
-        $data['status'] = 'pending_verification';
-
-        $job = Job::create($data);
-
+        $job = $this->jobService->createJob($request->validated(), auth()->id());
         return $this->successResponse($job, 'Tugas berhasil dibuat dan menunggu persetujuan Admin.', 201);
     }
 
     public function customerJobs(): JsonResponse
     {
-        // Mengambil semua tugas yang dibuat oleh customer yang sedang login
-        $jobs = Job::with(['category', 'worker'])
-            ->where('customer_id', auth()->id())
-            ->orderBy('created_at', 'desc')
-            ->get();
-
+        $jobs = $this->jobService->getCustomerJobHistory(auth()->id());
         return $this->successResponse($jobs, 'Daftar riwayat tugas Anda berhasil diambil.', 200);
     }
 
@@ -45,45 +41,31 @@ class JobController extends Controller
 
     public function availableJobs(): JsonResponse
     {
-        // Hanya menampilkan tugas yang sudah disetujui admin (status: approved)
-        $jobs = Job::with(['category', 'customer'])
-            ->where('status', 'approved')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
+        $jobs = $this->jobService->getAvailableJobsForWorker();
         return $this->successResponse($jobs, 'Daftar bursa kerja tersedia berhasil diambil.', 200);
     }
 
     public function takeJob(Job $job): JsonResponse
     {
-        if ($job->status !== 'approved') {
-            return $this->errorResponse('Gagal! Tugas ini belum/tidak tersedia untuk diambil.', 400);
+        try {
+            $job = $this->jobService->takeJob($job, auth()->id());
+            return $this->successResponse($job, 'Tugas berhasil diambil. Selamat bekerja!', 200);
+        } catch (Exception $e) {
+            // Tangkap exception dari Service dan jadikan respons error standar
+            $code = $e->getCode() !== 0 ? $e->getCode() : 400;
+            return $this->errorResponse($e->getMessage(), $code);
         }
-
-        $job->update([
-            'status' => 'on_progress',
-            'worker_id' => auth()->id() // Catat siapa worker yang mengambilnya
-        ]);
-
-        return $this->successResponse($job, 'Tugas berhasil diambil. Selamat bekerja!', 200);
     }
 
     public function completeJob(Job $job): JsonResponse
     {
-        // 1. Pastikan tugas tersebut memang sedang dikerjakan (statusnya 'taken')
-        if ($job->status !== 'on_progress') {
-            return $this->errorResponse('Gagal! Hanya tugas yang sedang dalam pengerjaan yang bisa diselesaikan.', 400);
+        try {
+            $job = $this->jobService->completeJob($job, auth()->id());
+            return $this->successResponse($job, 'Selamat! Tugas telah dinyatakan selesai.', 200);
+        } catch (Exception $e) {
+            $code = $e->getCode() !== 0 ? $e->getCode() : 400;
+            return $this->errorResponse($e->getMessage(), $code);
         }
-
-        // 2. Keamanan Tambahan: Pastikan Worker yang klik 'selesai' adalah Worker yang benar-benar mengambil tugas itu
-        if ($job->worker_id !== auth()->id()) {
-            return $this->errorResponse('Akses ditolak! Anda bukan pekerja yang ditugaskan untuk tugas ini.', 403);
-        }
-
-        // 3. Ubah status menjadi completed
-        $job->update(['status' => 'completed']);
-
-        return $this->successResponse($job, 'Selamat! Tugas telah dinyatakan selesai. Pekerjaan bagus!', 200);
     }
 
     // ==========================================
@@ -92,23 +74,18 @@ class JobController extends Controller
 
     public function pendingJobs(): JsonResponse
     {
-        // Admin melihat daftar antrean tugas yang baru dibuat customer
-        $jobs = Job::with(['category', 'customer'])
-            ->where('status', 'pending_verification')
-            ->orderBy('created_at', 'asc') // Yang paling lama mengantre di atas
-            ->get();
-
+        $jobs = $this->jobService->getPendingJobsForAdmin();
         return $this->successResponse($jobs, 'Daftar antrean verifikasi tugas berhasil diambil.', 200);
     }
 
     public function verifyJob(Job $job): JsonResponse
     {
-        if ($job->status !== 'pending_verification') {
-            return $this->errorResponse('Hanya tugas berstatus pending yang bisa diverifikasi.', 400);
+        try {
+            $job = $this->jobService->verifyJob($job);
+            return $this->successResponse($job, 'Tugas berhasil disetujui dan dilempar ke bursa kerja.', 200);
+        } catch (Exception $e) {
+            $code = $e->getCode() !== 0 ? $e->getCode() : 400;
+            return $this->errorResponse($e->getMessage(), $code);
         }
-
-        $job->update(['status' => 'approved']);
-
-        return $this->successResponse($job, 'Tugas berhasil disetujui dan dilempar ke bursa kerja.', 200);
     }
 }
