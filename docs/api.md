@@ -7,163 +7,372 @@
 
 ---
 
-## 1. Authentication
+# 1. Authentication
 
-### A. Register User Baru
-- **Endpoint:** `POST /register`
-- **Akses:** Publik
-- **Body Request (JSON):**
-  ```json
-  {
-      "name": "admin",
-      "email": "admin@gmail.com",
-      "password": "admin123",
-      "password_confirmation": "admin123",
-      "role_id": 1
-  }
+### A. Register
 
-### B. Login User
-- **Endpoint:** `POST /login`
-- **Akses:** Publik
-- **Body Request (JSON):**
-  ```json
-  {
-      "email": "admin@gmail.com",
-      "password": "admin123",
-  }
-- **Response Sukses (200):**
-  ```json
-  {
-      "message": "Login berhasil",
-      "access_token": "1|laravel_sanctum_token_string...",
-      "token_type": "Bearer",
-      "user": {
-          "id": 4,
-          "role_id": 1,
-          "name": "admin",
-          "email": "admin@gmail.com",
-          "email_verified_at": null,
-          "created_at": "YY-MM-19T14:47:44.000000Z",
-          "updated_at": "YY-MM-19T14:47:44.000000Z",
-          "role": {
-              "id": 1,
-              "name": "admin",
-              "created_at": "YY-MM-08T19:21:24.000000Z",
-              "updated_at": "YY-MM-08T19:21:24.000000Z"
-          }
-      }
-  }
+* **Endpoint:** `POST /register`
+* **Akses:** Public
 
-### C. Logout User
-- **Endpoint:** `POST /logout`
-- **Akses:** Privat (Bearer Token Required)
+```json
+{
+    "name":"Requester",
+    "email":"requester@gmail.com",
+    "password":"password123",
+    "password_confirmation":"password123",
+    "role_id":2
+}
+```
 
+---
 
-## 2. Category Management (Admin Only)
+### B. Login
 
-### A. Menampilkan Semua Kategori
-- **Endpoint:** `GET /categories`
-- **Akses:** Privat (Semua User yang sudah login)
+* **Endpoint:** `POST /login`
+* **Akses:** Public
 
-### B. Membuat Kategori Baru
-- **Endpoint:** `POST /categories`
-- **Akses:** Privat (Khusus Admin)
-- **Body Request (JSON):**
-  ```json
-  { "name": "Kategori Baru" }
+```json
+{
+    "email":"requester@gmail.com",
+    "password":"password123"
+}
+```
 
+---
 
-## 3. Job Management
+### C. Logout
 
-### A. Customer: Membuat Tugas Baru
-- **Endpoint:** `POST /jobs`
-- **Akses:** Privat (Khusus Customer)
-- **Body Request (JSON):**
-  ```json
-  {
-      "category_id": 1,
-      "title": "Bersih-bersih Garasi",
-      "description": "Sapu dan pel garasi rumah sampai bersih.",
-      "price": 50000,
-      "deadline": "2026-07-20"
-  }
+* **Endpoint:** `POST /logout`
+* **Akses:** Login
 
-### B. Customer: Riwayat Tugas Saya
-- **Endpoint:** `GET /customer/jobs`
-- **Akses:** Privat (Khusus Customer)
-- **Keterangan:** Mengambil semua tugas yang pernah dibuat oleh customer yang sedang login.
+---
 
-### C. Admin: Antrean Verifikasi Tugas
-- **Endpoint:** `GET /pending-jobs`
-- **Akses:** Privat (Khusus Admin)
-- **Keterangan:** Menampilkan tugas-tugas baru masuk berstatus pending yang perlu diverifikasi.
+### D. Profil Login
 
-### D. Admin: Menyetujui Tugas (Approve)
-- **Endpoint:** `PUT /jobs/{job_id}/verify`
-- **Akses:** Privat (Khusus Admin)
-- **Keterangan:** Mengubah status tugas dari pending menjadi approved agar tampil di bursa kerja Worker.
+* **Endpoint:** `GET /me`
+* **Akses:** Login
 
-### E. Worker: Bursa Kerja Tersedia
-- **Endpoint:** `GET /available-jobs`
-- **Akses:** Privat (Khusus Worker)
-- **Keterangan:** Menampilkan semua tugas yang berstatus approved dan siap untuk diambil.
+---
 
-### F. Worker: Mengambil Tugas (Take Job)
-- **Endpoint:** `PUT /jobs/{job_id}/take`
-- **Akses:** Privat (Khusus Worker)
-- **Keterangan:** Pekerja mengklaim tugas. Status berubah menjadi taken.
+# 2. Category
 
-### G. Worker: Menyelesaikan Tugas (Complete Job)
-- **Endpoint:** `PUT /jobs/{job_id}/complete`
-- **Akses:** Privat (Khusus Worker)
-- **Keterangan:** Menyatakan tugas selesai dikerjakan. Status berubah menjadi completed.
+### A. Daftar Kategori
 
+* **Endpoint:** `GET /categories`
+* **Akses:** Login
 
-## 4. Global Exception Responses (Jaring Pengaman Sistem)
+---
 
-### A. Error 401 (Belum Login / Token Kadaluwarsa)
-  ```json
-  {
-      "success": false,
-      "message": "Akses ditolak. Sesi tidak valid atau Anda belum login.",
-      "errors": null
-  }
-  ```
- 
-### B. Error 403 (Akses Ditolak / Salah Role)
-  ```json
-  {
-      "success": false,
-      "message": "Akses ditolak. Anda tidak memiliki izin untuk tindakan ini.",
-      "errors": null
-  }
-  ```
+### B. Detail Kategori
 
-### C. Error 404 (Data atau URL Salah)
-  ```json
-  {
-      "success": false,
-      "message": "Data tidak ditemukan atau rute tidak valid.",
-      "errors": null
-  }
-  ```
+* **Endpoint:** `GET /categories/{id}`
+* **Akses:** Login
 
-### D. Error 405 (Salah Metode HTTP, misal GET rute POST)
-  ```json
-  {
-      "success": false,
-      "message": "Metode HTTP tidak diizinkan. Cek kembali apakah harusnya GET, POST, PUT, atau DELETE.",
-      "errors": null
-  }
-  ```
+---
 
-### E. Error 500+ (Internal Server Error / Bug Kode PHP)
-  ```json
-  {
-      "success": false,
-      "message": "Terjadi kegagalan sistem pada server (Internal Server Error).",
-      "problem": "Inti masalah error bawaan PHP ditampilkan di sini",
-      "solution": "Solusi: Silakan periksa log server, pastikan database menyala, atau cek apakah ada typo kode di file Service/Controller Anda.",
-      "errors": null
-  }
-  ```
+### C. Tambah Kategori
+
+* **Endpoint:** `POST /categories`
+* **Akses:** Admin
+
+```json
+{
+    "name":"Design"
+}
+```
+
+---
+
+### D. Update Kategori
+
+* **Endpoint:** `PUT /categories/{id}`
+* **Akses:** Admin
+
+---
+
+### E. Hapus Kategori
+
+* **Endpoint:** `DELETE /categories/{id}`
+* **Akses:** Admin
+
+---
+
+# 3. Job
+
+### A. Membuat Quest
+
+* **Endpoint:** `POST /jobs`
+* **Akses:** Customer
+
+```json
+{
+    "category_id":1,
+    "title":"Desain Logo",
+    "description":"Logo UMKM",
+    "budget":50000,
+    "deadline":"2026-08-01"
+}
+```
+
+---
+
+### B. Daftar Quest Saya
+
+* **Endpoint:** `GET /jobs/mine`
+* **Akses:** Customer
+
+---
+
+### C. Daftar Quest Terbuka
+
+* **Endpoint:** `GET /jobs`
+* **Akses:** Login
+
+---
+
+### D. Detail Quest
+
+* **Endpoint:** `GET /jobs/{id}`
+* **Akses:** Login
+
+---
+
+### E. Update Quest
+
+* **Endpoint:** `PUT /jobs/{id}`
+* **Akses:** Customer (Pemilik Quest)
+
+---
+
+### F. Hapus Quest
+
+* **Endpoint:** `DELETE /jobs/{id}`
+* **Akses:** Customer (Pemilik Quest)
+
+---
+
+# 4. Application
+
+### A. Melamar Quest
+
+* **Endpoint:** `POST /applications/jobs/{job}/apply`
+* **Akses:** Worker
+
+Body
+
+```json
+{
+    "terms_accepted": true
+}
+```
+
+---
+
+### B. Daftar Pelamar
+
+* **Endpoint:** `GET /applications/jobs/{job}/applications`
+* **Akses:** Customer
+
+---
+
+### C. Riwayat Lamaran
+
+* **Endpoint:** `GET /applications/mine`
+* **Akses:** Worker
+
+---
+
+### D. Terima Lamaran
+
+* **Endpoint:** `PATCH /applications/{application}/accept`
+* **Akses:** Customer
+
+---
+
+### E. Tolak Lamaran
+
+* **Endpoint:** `PATCH /applications/{application}/reject`
+* **Akses:** Customer
+
+---
+
+# 5. Submission
+
+### A. Submit Hasil Pekerjaan
+
+* **Endpoint:** `POST /submissions/jobs/{job}`
+* **Akses:** Worker
+
+Body
+
+* attachment (file)
+* note
+
+---
+
+### B. Detail Submission
+
+* **Endpoint:** `GET /submissions/jobs/{job}`
+* **Akses:** Customer & Worker terkait
+
+---
+
+# 6. Escrow
+
+### A. Deposit Dana
+
+* **Endpoint:** `POST /escrows/jobs/{job}/fund`
+* **Akses:** Customer
+
+---
+
+### B. Release Dana
+
+* **Endpoint:** `PATCH /escrows/jobs/{job}/release`
+* **Akses:** Customer
+
+---
+
+### C. Refund Dana
+
+* **Endpoint:** `PATCH /escrows/jobs/{job}/refund`
+* **Akses:** Customer
+
+---
+
+# 7. Transaction
+
+### A. Riwayat Transaksi
+
+* **Endpoint:** `GET /transactions`
+* **Akses:** Login
+
+---
+
+### B. Detail Transaksi
+
+* **Endpoint:** `GET /transactions/{transaction}`
+* **Akses:** Login
+
+---
+
+# 8. Verification Document
+
+### A. Upload Dokumen
+
+* **Endpoint:** `POST /verification`
+* **Akses:** Worker
+
+Body (form-data)
+
+* document
+* document_type
+
+---
+
+### B. Status Verifikasi
+
+* **Endpoint:** `GET /verification`
+* **Akses:** Worker
+
+---
+
+### C. Daftar Verifikasi
+
+* **Endpoint:** `GET /admin/verifications`
+* **Akses:** Admin
+
+---
+
+### D. Approve Dokumen
+
+* **Endpoint:** `PUT /admin/verifications/{document}/approve`
+* **Akses:** Admin
+
+---
+
+### E. Reject Dokumen
+
+* **Endpoint:** `PUT /admin/verifications/{document}/reject`
+* **Akses:** Admin
+
+Body
+
+```json
+{
+    "review_note":"Dokumen buram."
+}
+```
+
+---
+
+# 9. User Profile
+
+### A. Profil Saya
+
+* **Endpoint:** `GET /profile`
+* **Akses:** Login
+
+---
+
+### B. Update Profil
+
+* **Endpoint:** `PUT /profile`
+* **Akses:** Login
+
+---
+
+### C. Profil Publik
+
+* **Endpoint:** `GET /users/{id}`
+* **Akses:** Login
+
+---
+
+# 10. Global Exception Response
+
+### 401 Unauthorized
+
+```json
+{
+    "success": false,
+    "message": "Unauthenticated."
+}
+```
+
+### 403 Forbidden
+
+```json
+{
+    "success": false,
+    "message": "Anda tidak memiliki akses."
+}
+```
+
+### 404 Not Found
+
+```json
+{
+    "success": false,
+    "message": "Data tidak ditemukan."
+}
+```
+
+### 422 Validation Error
+
+```json
+{
+    "success": false,
+    "message": "Validation Error",
+    "errors": {}
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+    "success": false,
+    "message": "Internal Server Error"
+}
+```
