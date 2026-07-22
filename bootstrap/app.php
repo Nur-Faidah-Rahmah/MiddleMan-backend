@@ -1,15 +1,15 @@
 <?php
 
+use App\Exceptions\ApiException;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
-
-// Import semua jenis exception HTTP
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
-use Illuminate\Auth\AuthenticationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -27,75 +27,97 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Daftarkan ke global middleware
         $middleware->append(\App\Http\Middleware\SanitizeInput::class);
-        
-        $middleware->alias([
-            'role' => \App\Http\Middleware\CheckRole::class,
-        ]);
 
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        // 1. Tangkap Error 401 (Belum Login / Token Invalid)
-        $exceptions->render(function (AuthenticationException $e, Request $request) {
-            if ($request->is('api/*')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Akses ditolak. Sesi tidak valid atau Anda belum login.',
-                    'errors'  => null
-                ], 401);
-            }
-        });
+    ->withExceptions(function (Exceptions $exceptions) {
 
-        // 2. Tangkap Error 403 (Akses Ditolak / Salah Role)
-        $exceptions->render(function (AccessDeniedHttpException $e, Request $request) {
-            if ($request->is('api/*')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Akses ditolak. Anda tidak memiliki izin untuk tindakan ini.',
-                    'errors'  => null
-                ], 403);
-            }
-        });
+    $exceptions->render(function (
+        Throwable $e,
+        Request $request
+    ) {
 
-        // 3. Tangkap Error 404 (Data / URL Tidak Ditemukan)
-        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
-            if ($request->is('api/*')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Data tidak ditemukan atau rute tidak valid.',
-                    'errors'  => null
-                ], 404);
-            }
-        });
+        if (! $request->is('api/*')) {
+            return null;
+        }
 
-        // 4. Tangkap Error 405 (Salah Metode HTTP, misal GET padahal harusnya POST)
-        $exceptions->render(function (MethodNotAllowedHttpException $e, Request $request) {
-            if ($request->is('api/*')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Metode HTTP tidak diizinkan. Cek kembali apakah harusnya GET, POST, PUT, atau DELETE.',
-                    'errors'  => null
-                ], 405);
-            }
-        });
+        if ($e instanceof ApiException) {
 
-        // BLOK PENGAMAN 500+ DI PALING BAWAH:
-        $exceptions->render(function (Throwable $e, Request $request) {
-            if ($request->is('api/*')) {
-                
-                // Ambil status code HTTP (jika bukan HTTP exception, otomatis set ke 500)
-                $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => null
+            ], $e->getCode());
 
-                // hanya mencegat error tingkat server (500 ke atas, termasuk 505)
-                if ($statusCode >= 500) {
-                    return response()->json([
-                        'success'     => false,
-                        'message'     => 'Terjadi kegagalan sistem pada server (Internal Server Error).',
-                        'problem'     => $e->getMessage(), // Hanya mengambil 1 baris inti masalahnya saja
-                        'solution'    => 'Solusi: Silakan periksa log server, pastikan database menyala, atau cek apakah ada typo kode di file Service/Controller Anda.',
-                        'errors'      => null
-                    ], $statusCode);
-                }
-            }
-        });
+        }
 
-    })->create();
+        if ($e instanceof ValidationException) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation Error',
+                'errors' => $e->errors()
+            ], 422);
+
+        }
+
+        if ($e instanceof AuthenticationException) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+                'errors' => null
+            ],401);
+
+        }
+
+        if ($e instanceof AuthorizationException) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden.',
+                'errors' => null
+            ],403);
+
+        }
+
+        if ($e instanceof ModelNotFoundException) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.',
+                'errors' => null
+            ],404);
+
+        }
+
+        if ($e instanceof NotFoundHttpException) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Endpoint tidak ditemukan.',
+                'errors' => null
+            ],404);
+
+        }
+
+        if ($e instanceof MethodNotAllowedHttpException) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Method tidak diizinkan.',
+                'errors' => null
+            ],405);
+
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => config('app.debug')
+                ? $e->getMessage()
+                : 'Internal Server Error',
+            'errors' => null
+        ],500);
+
+    });
+
+})->create();

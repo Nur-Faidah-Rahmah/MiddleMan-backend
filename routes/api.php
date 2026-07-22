@@ -4,6 +4,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ApplicationController;
+use App\Http\Controllers\Api\SubmissionController;
+use App\Http\Controllers\Api\EscrowController;
+use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\UserProfileController;
+use App\Http\Controllers\Api\VerificationDocumentController;
 
 // Semua rute di dalam grup ini otomatis memiliki awalan URL /api/v1/...
 Route::prefix('v1')->group(function () {
@@ -16,24 +22,18 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         
         Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me',[AuthController::class,'me']);
 
-        // 1. RUTE KHUSUS CUSTOMER (Lolos Satpam 2: Role Customer)
-        Route::middleware('role:customer')->group(function () {
-            Route::post('/jobs', [JobController::class, 'store']);       // Create Tugas Baru
-            Route::get('/my-requests', [JobController::class, 'customerJobs']); // Lihat tugas miliknya
-        });
-
-        // 2. RUTE KHUSUS WORKER (Lolos Satpam 2: Role Worker)
+        // RUTE KHUSUS WORKER (Lolos Satpam 2: Role Worker)
         Route::middleware('role:worker')->group(function () {
-            Route::get('/available-jobs', [JobController::class, 'availableJobs']); // Bursa kerja
-            Route::put('/jobs/{job}/take', [JobController::class, 'takeJob']);      // Ambil tugas
-            Route::put('/jobs/{job}/complete', [JobController::class, 'completeJob']); // Selesaikan tugas
+            Route::get('/verification', [VerificationDocumentController::class, 'show']);
         });
 
-        // 3. RUTE KHUSUS ADMIN (Lolos Satpam 2: Role Admin)
+        // RUTE KHUSUS ADMIN (Lolos Satpam 2: Role Admin)
         Route::middleware('role:admin')->group(function () {
-            Route::get('/jobs/pending', [JobController::class, 'pendingJobs']); // Verifikasi list
-            Route::put('/jobs/{job}/verify', [JobController::class, 'verifyJob']);    // Setujui tugas
+            Route::get('/admin/verifications', [VerificationDocumentController::class, 'pending']);
+            Route::put('/admin/verifications/{document}/approve', [VerificationDocumentController::class, 'approve']);
+            Route::put('/admin/verifications/{document}/reject', [VerificationDocumentController::class, 'reject']);
         });
 
         // --- Akses Semua User Logged-In (Customer, Worker, Admin) ---
@@ -42,10 +42,77 @@ Route::prefix('v1')->group(function () {
 
         // --- Akses Khusus Admin (Operasi Mutasi Data) ---
         Route::middleware('role:admin')->group(function () {
-            Route::post('/categories', [CategoryController::class, 'store']);       // Create
-            Route::put('/categories/{category}', [CategoryController::class, 'update']);   // Update
-            Route::delete('/categories/{category}', [CategoryController::class, 'destroy']); // Delete
+            Route::apiResource('categories', CategoryController::class)->except(['index','show']);
         });
+
+        Route::prefix('jobs')->group(function(){
+            Route::get('/',[JobController::class,'availableJobs']);
+
+            Route::post('/',[JobController::class,'store']);
+
+            Route::get('/mine',[JobController::class,'customerJobs']);
+
+            Route::get('/{job}',[JobController::class,'show']);
+
+            Route::put('/{job}',[JobController::class,'update']);
+
+            Route::delete('/{job}',[JobController::class,'destroy']);
+        });
+
+        Route::prefix('applications')->group(function(){
+            Route::get('/mine',[ApplicationController::class,'myApplications']);
+
+            Route::patch('/{application}/accept',[ApplicationController::class,'accept']);
+
+            Route::patch('/{application}/reject',[ApplicationController::class,'reject']);
+
+            Route::post('/jobs/{job}/apply',[ApplicationController::class,'apply']);
+
+            Route::get('/jobs/{job}/applications',[ApplicationController::class,'applicants']);
+
+        });
+
+        Route::prefix('submissions')->group(function () {
+
+            Route::post('/jobs/{job}',[SubmissionController::class,'submit']);
+
+            Route::get('/jobs/{job}',[SubmissionController::class,'show']);
+
+        });
+
+        Route::prefix('escrows')->group(function () {
+
+            Route::post('/jobs/{job}/fund',[EscrowController::class,'fund']);
+
+            Route::patch('/jobs/{job}/release',[EscrowController::class,'release']);
+
+            Route::patch('/jobs/{job}/refund',[EscrowController::class,'refund']);
+
+        });
+
+        Route::prefix('transactions')->group(function(){
+
+            Route::get('/',[TransactionController::class,'history']);
+
+            Route::get('/{transaction}',[TransactionController::class,'show']);
+
+        });
+
+        Route::prefix('profile')->group(function(){
+
+            Route::get('/',[UserProfileController::class,'show']);
+
+            Route::put('/',[UserProfileController::class,'update']);
+
+        });
+
+        Route::prefix('verification')->group(function(){
+
+            Route::post('/',[VerificationDocumentController::class,'upload']);
+
+        });
+
+        Route::get('/users/{user}', [UserProfileController::class, 'publicProfile']);
         
     });
 

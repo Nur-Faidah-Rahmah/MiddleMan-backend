@@ -14,10 +14,11 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
+        'role_id',
         'name',
         'email',
         'password',
-        'role_id', // Jangan lupa tambahkan role_id di sini
+        'status',
     ];
 
     protected $hidden = [
@@ -33,21 +34,75 @@ class User extends Authenticatable
         ];
     }
 
-    // User memiliki satu peran
-    public function role(): BelongsTo
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function role()
     {
         return $this->belongsTo(Role::class);
     }
 
-    // Tugas yang DIBUAT oleh user (sebagai Customer)
-    public function createdJobs()
+    public function profile()
     {
-        return $this->hasMany(Job::class, 'customer_id');
+        return $this->hasOne(UserProfile::class);
     }
 
-    // Tugas yang DIAMBIL oleh user (sebagai Worker)
-    public function takenJobs()
+    public function verificationDocuments()
     {
-        return $this->hasMany(Job::class, 'worker_id');
+        return $this->hasOne(VerificationDocument::class);
     }
+
+    public function requestedJobs()
+    {
+        return $this->hasMany(Job::class, 'requester_id');
+    }
+
+    public function selectedJobs()
+    {
+        return $this->hasMany(Job::class, 'selected_worker_id');
+    }
+
+    public function applications()
+    {
+        return $this->hasMany(Application::class, 'worker_id');
+    }
+
+    public function submissions()
+    {
+        return $this->hasMany(Submission::class, 'worker_id');
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function escrowRequests()
+    {
+        return $this->hasMany(Escrow::class, 'requester_id');
+    }
+
+    public function escrowWorks()
+    {
+        return $this->hasMany(Escrow::class, 'worker_id');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Future Feature (v3)
+    |--------------------------------------------------------------------------
+    */
+
+    // public function disputesAsRequester()
+    // {
+    //     return $this->hasMany(Dispute::class, 'requester_id');
+    // }
+
+    // public function disputesAsWorker()
+    // {
+    //     return $this->hasMany(Dispute::class, 'worker_id');
+    // }
 }
