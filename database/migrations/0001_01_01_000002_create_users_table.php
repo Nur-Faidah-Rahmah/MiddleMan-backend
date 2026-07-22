@@ -13,13 +13,22 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            // constrained() otomatis merujuk ke tabel 'roles'
-            $table->foreignId('role_id')->constrained()->onDelete('cascade');
-            
+
+            $table->foreignId('role_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+
+            $table->enum('status', [
+                'pending',
+                'active',
+                'suspended'
+            ])->default('pending');
+
             $table->rememberToken();
             $table->timestamps();
         });
