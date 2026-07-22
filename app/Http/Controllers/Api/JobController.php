@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Models\Job;
-use App\Http\Requests\Job\StoreJobRequest;
 use App\Services\JobService;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Job\StoreJobRequest;
+use App\Http\Requests\Job\UpdateJobStatusRequest;
+use App\Http\Resources\Job\JobCollection;
+use App\Http\Resources\Job\JobResource;
 use Illuminate\Http\JsonResponse;
 use Exception;
 
@@ -26,13 +29,91 @@ class JobController extends Controller
     public function store(StoreJobRequest $request): JsonResponse
     {
         $job = $this->jobService->createJob($request->validated(), auth()->id());
-        return $this->successResponse($job, 'Tugas berhasil dibuat dan menunggu persetujuan Admin.', 201);
+        return $this->successResponse(
+            new JobResource($job),
+            'Tugas berhasil dibuat dan menunggu persetujuan Admin.',
+            201);
     }
 
     public function customerJobs(): JsonResponse
     {
-        $jobs = $this->jobService->getCustomerJobHistory(auth()->id());
-        return $this->successResponse($jobs, 'Daftar riwayat tugas Anda berhasil diambil.', 200);
+        $jobs = $this->jobService->getRequesterJobs(auth()->id());
+
+        return $this->successResponse(
+            new JobCollection($jobs),
+            'Daftar quest berhasil diambil.'
+        );
+    }
+
+    /**
+     * Detail quest.
+     */
+    public function show(Job $job): JsonResponse
+    {
+        return $this->successResponse(
+            new JobResource(
+                $this->jobService->show($job)
+            ),
+            'Detail quest berhasil diambil.'
+        );
+    }
+
+    /**
+     * Update quest.
+     */
+    public function update(
+        UpdateJobStatusRequest $request,
+        Job $job
+    ): JsonResponse
+    {
+        try {
+
+            return $this->successResponse(
+                new JobResource(
+                    $this->jobService->update(
+                        $job,
+                        $request->validated(),
+                        auth()->id()
+                    )
+                ),
+                'Quest berhasil diperbarui.'
+            );
+
+        } catch (Exception $e) {
+
+            return $this->errorResponse(
+                $e->getMessage(),
+                $e->getCode() ?: 400
+            );
+
+        }
+    }
+
+    /**
+     * Hapus quest.
+     */
+    public function destroy(Job $job): JsonResponse
+    {
+        try {
+
+            $this->jobService->destroy(
+                $job,
+                auth()->id()
+            );
+
+            return $this->successResponse(
+                null,
+                'Quest berhasil dihapus.'
+            );
+
+        } catch (Exception $e) {
+
+            return $this->errorResponse(
+                $e->getMessage(),
+                $e->getCode() ?: 400
+            );
+
+        }
     }
 
     // ==========================================
@@ -41,51 +122,53 @@ class JobController extends Controller
 
     public function availableJobs(): JsonResponse
     {
-        $jobs = $this->jobService->getAvailableJobsForWorker();
-        return $this->successResponse($jobs, 'Daftar bursa kerja tersedia berhasil diambil.', 200);
+        $jobs = $this->jobService->getOpenJobs();
+
+        return $this->successResponse(
+            new JobCollection($jobs),
+            'Daftar quest tersedia berhasil diambil.'
+        );
     }
 
-    public function takeJob(Job $job): JsonResponse
+    public function publish(Job $job): JsonResponse
     {
-        try {
-            $job = $this->jobService->takeJob($job, auth()->id());
-            return $this->successResponse($job, 'Tugas berhasil diambil. Selamat bekerja!', 200);
-        } catch (Exception $e) {
-            // Tangkap exception dari Service dan jadikan respons error standar
-            $code = $e->getCode() !== 0 ? $e->getCode() : 400;
-            return $this->errorResponse($e->getMessage(), $code);
-        }
+        $job = $this->jobService->publish($job);
+
+        return $this->successResponse(
+            new JobResource($job),
+            'Quest berhasil dipublikasikan.'
+        );
     }
 
-    public function completeJob(Job $job): JsonResponse
+    public function selectWorker(Job $job, int $applicationId): JsonResponse
     {
-        try {
-            $job = $this->jobService->completeJob($job, auth()->id());
-            return $this->successResponse($job, 'Selamat! Tugas telah dinyatakan selesai.', 200);
-        } catch (Exception $e) {
-            $code = $e->getCode() !== 0 ? $e->getCode() : 400;
-            return $this->errorResponse($e->getMessage(), $code);
-        }
+        $job = $this->jobService
+            ->selectWorker($job, $applicationId);
+
+        return $this->successResponse(
+            new JobResource($job),
+            'Worker berhasil dipilih.'
+        );
     }
 
-    // ==========================================
-    // 3. FUNGSI KHUSUS ADMIN
-    // ==========================================
-
-    public function pendingJobs(): JsonResponse
+    public function approve(Job $job): JsonResponse
     {
-        $jobs = $this->jobService->getPendingJobsForAdmin();
-        return $this->successResponse($jobs, 'Daftar antrean verifikasi tugas berhasil diambil.', 200);
+        $job = $this->jobService->approve($job);
+
+        return $this->successResponse(
+            new JobResource($job),
+            'Submission berhasil disetujui.'
+        );
     }
 
-    public function verifyJob(Job $job): JsonResponse
+    public function cancel(Job $job): JsonResponse
     {
-        try {
-            $job = $this->jobService->verifyJob($job);
-            return $this->successResponse($job, 'Tugas berhasil disetujui dan dilempar ke bursa kerja.', 200);
-        } catch (Exception $e) {
-            $code = $e->getCode() !== 0 ? $e->getCode() : 400;
-            return $this->errorResponse($e->getMessage(), $code);
-        }
+        $job = $this->jobService->cancel($job);
+
+        return $this->successResponse(
+            new JobResource($job),
+            'Quest berhasil dibatalkan.'
+        );
     }
+
 }
