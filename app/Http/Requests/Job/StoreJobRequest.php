@@ -19,7 +19,7 @@ class StoreJobRequest extends FormRequest
             'category_id' => 'required|exists:categories,id',
             'title'       => 'required|string|max:255',
             'description' => 'required|string',
-            'price'       => 'required|numeric|min:0',
+            'budget'      => 'required|numeric|min:1000',
             // Pastikan deadline tidak boleh di masa lalu (minimal hari ini/besok)
             'deadline'    => 'required|date|after:today', 
         ];
