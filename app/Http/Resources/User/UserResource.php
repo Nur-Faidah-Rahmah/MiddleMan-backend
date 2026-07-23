@@ -39,6 +39,14 @@ class UserResource extends JsonResource
 
                 'avatar' => $this->profile?->avatar,
 
+                'wallet_balance' => (float) ($this->profile?->wallet_balance ?? 5000000.00),
+
+                'rating' => (float) ($this->profile?->rating ?? 5.00),
+
+                'level' => (int) ($this->profile?->level ?? 1),
+
+                'exp' => (int) ($this->profile?->exp ?? 0),
+
             ],
 
             'status'=>$this->status

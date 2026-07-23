@@ -29,6 +29,10 @@ class Job extends Model
         'opened_at',
         'taken_at',
         'completed_at',
+        'dispute_reason',
+        'disputed_by',
+        'disputed_at',
+        'dispute_notes',
     ];
 
     protected function casts(): array

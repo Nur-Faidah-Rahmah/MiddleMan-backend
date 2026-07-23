@@ -8,6 +8,7 @@ enum JobStatus: string
     case Open = 'open';
     case Taken = 'taken';
     case Submitted = 'submitted';
+    case Disputed = 'disputed';
     case Completed = 'completed';
     case Cancelled = 'cancelled';
 }

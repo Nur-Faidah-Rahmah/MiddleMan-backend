@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Job;
+use App\Models\User;
 use App\Models\Escrow;
 use App\Models\Transaction;
 use App\Models\Submission;
@@ -33,7 +34,18 @@ class EscrowService extends BaseService
 
         }
 
-        return DB::transaction(function () use ($job, $requesterId) {
+        // Deduct from requester's wallet
+        $requester = User::findOrFail($requesterId);
+        $profile = $requester->profile;
+
+        if (!$profile || (float) $profile->wallet_balance < (float) $job->budget) {
+            $this->fail('Saldo wallet tidak mencukupi untuk mendanai quest ini.', 400);
+        }
+
+        return DB::transaction(function () use ($job, $requesterId, $profile) {
+
+            // Deduct wallet
+            $profile->decrement('wallet_balance', $job->budget);
 
             $escrow = Escrow::create([
                 'job_id'       => $job->id,
@@ -55,7 +67,7 @@ class EscrowService extends BaseService
                 'amount'         => $job->budget,
                 'type'           => 'deposit',
                 'status'         => 'success',
-                'description'    => 'Deposit dana ke escrow.',
+                'description'    => 'Deposit dana ke escrow untuk Quest #' . $job->id . '.',
                 'transaction_at' => now(),
             ]);
 
@@ -118,6 +130,12 @@ class EscrowService extends BaseService
                 'released_at' => now(),
             ]);
 
+            // Credit worker's wallet
+            $worker = User::findOrFail($job->selected_worker_id);
+            if ($worker->profile) {
+                $worker->profile->increment('wallet_balance', $escrow->amount);
+            }
+
             Transaction::create([
                 'user_id'        => $job->selected_worker_id,
                 'job_id'         => $job->id,
@@ -125,16 +143,13 @@ class EscrowService extends BaseService
                 'amount'         => $escrow->amount,
                 'type'           => 'release',
                 'status'         => 'success',
-                'description'    => 'Pelepasan dana escrow ke worker.',
+                'description'    => 'Pelepasan dana escrow ke Worker untuk Quest #' . $job->id . '.',
                 'transaction_at' => now(),
             ]);
 
             $job->update([
-
-                'status' => JobStatus::Completed->value,
-
+                'status'       => JobStatus::Completed->value,
                 'completed_at' => now(),
-
             ]);
 
         });
@@ -177,37 +192,28 @@ class EscrowService extends BaseService
 
         }
 
-        DB::transaction(function () use (
-            $escrow,
-            $job
-        ) {
+        DB::transaction(function () use ($escrow, $job) {
 
             $escrow->update([
-
-                'status'=>'refunded',
-
-                'refunded_at'=>now()
-
+                'status'      => 'refunded',
+                'refunded_at' => now(),
             ]);
 
+            // Refund to requester's wallet
+            $requester = User::findOrFail($job->requester_id);
+            if ($requester->profile) {
+                $requester->profile->increment('wallet_balance', $escrow->amount);
+            }
+
             Transaction::create([
-
-                'user_id'=>$job->requester_id,
-
-                'job_id'=>$job->id,
-
-                'escrow_id'=>$escrow->id,
-
-                'amount'=>$escrow->amount,
-
-                'type'=>'refund',
-
-                'status'=>'success',
-
-                'description'=>'Pengembalian dana escrow.',
-
-                'transaction_at'=>now()
-
+                'user_id'        => $job->requester_id,
+                'job_id'         => $job->id,
+                'escrow_id'      => $escrow->id,
+                'amount'         => $escrow->amount,
+                'type'           => 'refund',
+                'status'         => 'success',
+                'description'    => 'Pengembalian dana escrow untuk Quest #' . $job->id . '.',
+                'transaction_at' => now(),
             ]);
 
         });

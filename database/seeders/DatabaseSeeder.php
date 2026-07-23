@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
 
-        \App\Models\Category::factory(10)->create();
+        $this->call(CategorySeeder::class);
 
         /*
         |--------------------------------------------------------------------------
@@ -52,8 +52,6 @@ class DatabaseSeeder extends Seeder
 
         ]);
 
-        $this->call(UserProfileSeeder::class);
-
         /*
         |--------------------------------------------------------------------------
         | Requester
@@ -61,11 +59,8 @@ class DatabaseSeeder extends Seeder
         */
 
         \App\Models\User::factory(10)
-
             ->create([
-
                 'role_id'=>2
-
             ]);
 
         /*
@@ -75,13 +70,11 @@ class DatabaseSeeder extends Seeder
         */
 
         \App\Models\User::factory(20)
-
             ->create([
-
                 'role_id'=>3
-
             ]);
 
+        $this->call(UserProfileSeeder::class);
         $this->call(VerificationSeeder::class);
 
     }

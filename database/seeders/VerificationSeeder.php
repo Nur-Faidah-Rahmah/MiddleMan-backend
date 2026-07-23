@@ -20,11 +20,11 @@ class VerificationSeeder extends Seeder
 
                     'user_id'=>$worker->id,
 
-                    'document_type'=>'ktp',
+                    'document_name' => 'KTP Verification',
 
-                    'document_number' => fake()->numerify('################'),
+                    'document_type' => 'identity',
 
-                    'document_path'=>'verification/sample.pdf',
+                    'document_path' => 'verification/sample.pdf',
 
                     'status'=>'approved',
 

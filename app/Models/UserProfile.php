@@ -29,14 +29,19 @@ class UserProfile extends Model
 
         'skills',
 
-        'avatar'
-
+        'avatar',
+        'wallet_balance',
+        'rating',
+        'level',
+        'exp'
     ];
 
     protected $casts = [
-
-        'birth_date'=>'date',
-
+        'birth_date' => 'date',
+        'wallet_balance' => 'decimal:2',
+        'rating' => 'decimal:2',
+        'level' => 'integer',
+        'exp' => 'integer',
     ];
 
     public function user()

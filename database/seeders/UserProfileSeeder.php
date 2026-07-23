@@ -14,22 +14,23 @@ class UserProfileSeeder extends Seeder
 
             UserProfile::create([
 
-                'user_id'=>$user->id,
+                'user_id'        => $user->id,
 
-                'phone'=>fake()->phoneNumber(),
+                'phone'          => fake()->phoneNumber(),
 
-                'gender'=>fake()->randomElement([
-                    'male',
-                    'female'
-                ]),
+                'address'        => fake()->address(),
 
-                'city'=>fake()->city(),
+                'bio'            => fake()->paragraph(),
 
-                'province'=>fake()->state(),
+                'skills'         => implode(', ', fake()->words(4)),
 
-                'bio'=>fake()->paragraph(),
+                'wallet_balance' => $user->role_id === 1 ? 10000000 : 5000000,
 
-                'skills'=>implode(', ', fake()->words(4))
+                'rating'         => 5.00,
+
+                'level'          => 1,
+
+                'exp'            => 0,
 
             ]);
 

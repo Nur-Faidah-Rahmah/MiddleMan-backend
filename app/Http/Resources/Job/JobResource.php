@@ -38,6 +38,14 @@ class JobResource extends JsonResource
                 $this->whenLoaded('selectedWorker')
             ),
 
+            'applications' => \App\Http\Resources\Application\ApplicationResource::collection(
+                $this->whenLoaded('applications')
+            ),
+
+            'submission' => \App\Http\Resources\Submission\SubmissionResource::make(
+                $this->whenLoaded('submission')
+            ),
+
             'created_at'=>optional($this->created_at)
                 ->format('Y-m-d H:i:s'),
 

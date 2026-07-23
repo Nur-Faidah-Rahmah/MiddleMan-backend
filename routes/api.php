@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\EscrowController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\VerificationDocumentController;
+use App\Http\Controllers\Api\DisputeController;
 
 // Semua rute di dalam grup ini otomatis memiliki awalan URL /api/v1/...
 Route::prefix('v1')->group(function () {
@@ -104,6 +105,20 @@ Route::prefix('v1')->group(function () {
 
             Route::put('/',[UserProfileController::class,'update']);
 
+            Route::post('/topup',[UserProfileController::class,'topUp']);
+
+        });
+
+        // Dispute routes
+        Route::prefix('disputes')->group(function () {
+
+            Route::post('/jobs/{job}', [DisputeController::class, 'file']);
+
+            // Admin only: resolve dispute
+            Route::middleware('role:admin')->group(function () {
+                Route::post('/jobs/{job}/resolve', [DisputeController::class, 'resolve']);
+            });
+
         });
 
         Route::prefix('verification')->group(function(){
@@ -112,6 +127,7 @@ Route::prefix('v1')->group(function () {
 
         });
 
+        Route::get('/users', [UserProfileController::class, 'index']);
         Route::get('/users/{user}', [UserProfileController::class, 'publicProfile']);
         
     });
