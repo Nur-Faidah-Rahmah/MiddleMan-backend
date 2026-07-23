@@ -12,7 +12,7 @@ class UpdateJobStatusRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,35 @@ class UpdateJobStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+
+            'category_id' => [
+                'sometimes',
+                'exists:categories,id',
+            ],
+
+            'title' => [
+                'sometimes',
+                'string',
+                'max:255',
+            ],
+
+            'description' => [
+                'sometimes',
+                'string',
+            ],
+
+            'budget' => [
+                'sometimes',
+                'numeric',
+                'min:1000',
+            ],
+
+            'deadline' => [
+                'sometimes',
+                'date',
+                'after:today',
+            ],
+
         ];
     }
 }
