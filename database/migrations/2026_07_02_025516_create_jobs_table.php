@@ -9,27 +9,63 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('jobs', function (Blueprint $table) {
+
             $table->id();
-            
-            // Relasi ke pembuat tugas (Customer)
-            $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
-            
-            // Relasi ke pengambil tugas (Worker). Nullable karena di awal belum ada yang ambil.
-            $table->foreignId('worker_id')->nullable()->constrained('users')->onDelete('set null');
-            
-            // Relasi ke kategori layanan
-            $table->foreignId('category_id')->constrained()->onDelete('cascade');
-            
+
+            // Requester
+            $table->foreignId('requester_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            // Worker terpilih
+            $table->foreignId('selected_worker_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            // Category
+            $table->foreignId('category_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
             $table->string('title');
+
             $table->text('description');
-            $table->decimal('price', 12, 2); // Menggunakan decimal untuk nominal uang (lebih aman)
-            
-            // Menggunakan ENUM untuk membatasi status yang valid
-            $table->enum('status', ['pending_verification', 'approved', 'on_progress', 'completed'])
-                  ->default('pending_verification');
-                  
+
+            $table->decimal('budget',12,2);
+
             $table->dateTime('deadline');
+
+            $table->enum('location_type',[
+                'online',
+                'offline'
+            ]);
+
+            $table->string('location')->nullable();
+
+            $table->text('custom_terms')->nullable();
+
+            $table->enum('status',[
+                'draft',
+                'waiting_payment',
+                'open',
+                'taken',
+                'submitted',
+                'approved',
+                'completed',
+                'disputed',
+                'cancelled',
+                'refunded'
+            ])->default('draft');
+
             $table->timestamps();
+
+            $table->timestamp('opened_at')->nullable();
+
+            $table->timestamp('taken_at')->nullable();
+
+            $table->timestamp('completed_at')->nullable();
+
         });
     }
 
